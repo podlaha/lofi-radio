@@ -112,11 +112,7 @@ function isValidUrl(str) {
 }
 
 function isValidYoutubeUrl(str) {
-  try {
-    const u = new URL(str)
-    return (u.protocol === 'http:' || u.protocol === 'https:') &&
-      (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be'))
-  } catch { return false }
+  return isValidUrl(str)
 }
 
 function isValidEmail(str) {

@@ -191,7 +191,7 @@ function StationsTab() {
     const youtube_url = form.youtube_url.trim()
 
     if (!name) { setFormError('Station name is required.'); setFormLoading(false); return }
-    if (!youtube_url && !urls.length) { setFormError('Either a YouTube URL or at least one stream URL is required.'); setFormLoading(false); return }
+    if (!youtube_url && !urls.length) { setFormError('Either a Live Stream URL or at least one stream URL is required.'); setFormLoading(false); return }
     if (isNaN(sort_order)) { setFormError('Sort order must be a number.'); setFormLoading(false); return }
 
     const invalidUrl = urls.find(u => { try { const p = new URL(u); return p.protocol !== 'http:' && p.protocol !== 'https:' } catch { return true } })
@@ -245,7 +245,7 @@ function StationsTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-[#e6edf3] truncate">{s.name}</p>
-                  {s.youtube_url && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-400 font-medium">YT</span>}
+                  {s.youtube_url && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-400 font-medium">LIVE</span>}
                 </div>
                 <p className="text-xs text-[#484f58] truncate">{s.genre}{s.description ? ` · ${s.description}` : ''}</p>
               </div>
@@ -277,13 +277,13 @@ function StationsTab() {
                 </div>
               ))}
               <div>
-                <label className="block text-xs text-[#8b949e] mb-1">YouTube URL <span className="text-[#484f58] font-normal">(paste a YouTube link to auto-resolve stream)</span></label>
-                <input type="url" placeholder="https://www.youtube.com/watch?v=..." value={form.youtube_url} onChange={e => setForm(p => ({ ...p, youtube_url: e.target.value }))}
+                <label className="block text-xs text-[#8b949e] mb-1">Live Stream URL <span className="text-[#484f58] font-normal">(YouTube, Twitch, Rumble, etc. — auto-resolved via yt-dlp)</span></label>
+                <input type="url" placeholder="https://www.twitch.tv/lofigirl" value={form.youtube_url} onChange={e => setForm(p => ({ ...p, youtube_url: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
               </div>
               <div>
                 <label className="block text-xs text-[#8b949e] mb-1">
-                  Stream URLs {!form.youtube_url && '*'} <span className="text-[#484f58] font-normal">{form.youtube_url ? '(optional when YouTube URL is set)' : '(first = primary, rest = fallbacks)'}</span>
+                  Stream URLs {!form.youtube_url && '*'} <span className="text-[#484f58] font-normal">{form.youtube_url ? '(optional when Live Stream URL is set)' : '(first = primary, rest = fallbacks)'}</span>
                 </label>
                 <div className="space-y-2">
                   {form.stream_urls.map((url, i) => (
