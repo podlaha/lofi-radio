@@ -66,7 +66,7 @@ app.use('/api/', apiLimiter)
 
 // ── yt-dlp integration ───────────────────────────────────
 
-const YTDLP = '/home/podlaha/.local/bin/yt-dlp'
+const YTDLP = process.env.YTDLP_PATH || '/usr/local/bin/yt-dlp'
 const ytCache = new Map() // stationId -> resolved stream URL
 
 function resolveYoutubeUrl(youtubeUrl) {
