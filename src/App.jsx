@@ -42,7 +42,7 @@ function FooterPlayer() {
       <div className="flex items-center gap-6 w-full" style={{ maxWidth: '680px', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
 
         {/* Mini vinyl */}
-        <div className={`w-9 h-9 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{ background: 'radial-gradient(circle, #e8a020 0%, #c07010 16%, #111 17%, #111 20%, #2a2a2a 21%, #111 26%, #2a2a2a 27%, #111 32%, #2a2a2a 33%, #111 38%, #2a2a2a 39%, #111 44%, #2a2a2a 45%, #0d0d0d 50%)', boxShadow: '0 0 0 1.5px #333' }} />
+        <div className={`w-9 h-9 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{ background: 'radial-gradient(circle, #ff6600 0%, #ff6600 16%, #ff9900 17%, #ff9900 20%, #ffcc00 21%, #ff9900 26%, #ffcc00 27%, #ff9900 32%, #ffcc00 33%, #ff9900 38%, #ffcc00 39%, #ff9900 44%, #ff6600 45%, #ff3300 100%)', boxShadow: '0 0 0 1.5px #ff6600' }} />
 
         {/* Play / pause */}
         <button onClick={togglePlay}
