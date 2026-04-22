@@ -108,7 +108,7 @@ export function RadioProvider({ children }) {
 
   function _stopYT() {
     if (ytPlayerRef.current) {
-      try { ytPlayerRef.current.stopVideo() } catch {}
+      try { ytPlayerRef.current.pauseVideo() } catch {}
     }
   }
 
