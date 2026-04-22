@@ -97,8 +97,10 @@ export function RadioProvider({ children }) {
         events: {
           onReady: (e) => { e.target.setVolume(volInt); e.target.playVideo() },
           onStateChange: (e) => {
-            if (e.data === window.YT.PlayerState.PLAYING) setBuffering(false)
-            if (e.data === window.YT.PlayerState.BUFFERING) setBuffering(true)
+            if (e.data === window.YT.PlayerState.PLAYING)  { setIsPlaying(true);  setBuffering(false) }
+            if (e.data === window.YT.PlayerState.BUFFERING) { setIsPlaying(true);  setBuffering(true)  }
+            if (e.data === window.YT.PlayerState.PAUSED)   { setIsPlaying(false); setBuffering(false) }
+            if (e.data === window.YT.PlayerState.ENDED)    { setIsPlaying(false); setBuffering(false) }
           },
           onError: () => { setBuffering(false); setIsPlaying(false) },
         },
