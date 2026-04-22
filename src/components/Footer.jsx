@@ -32,7 +32,10 @@ export default function Footer() {
         </div>
         <div className="mt-8 pt-6 border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-[#8b949e]">© {new Date().getFullYear()} balkonek.eu. All rights reserved.</p>
-          <p className="text-xs text-[#8b949e]">Built with React &amp; Tailwind CSS</p>
+          <div className="flex flex-col items-end gap-1">
+            <p className="text-xs text-[#8b949e]">Built with React &amp; Tailwind CSS</p>
+            <p className="text-xs text-[#484f58]">Art &copy; <a href="https://www.reddit.com/user/louisselle_/" target="_blank" rel="noopener noreferrer" className="text-[#484f58] hover:text-[#484f58] visited:text-[#484f58]">reddit.com/user/louisselle_/</a></p>
+          </div>
         </div>
       </div>
     </footer>
