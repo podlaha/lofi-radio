@@ -1,9 +1,11 @@
 import { createContext, useContext, useRef, useState, useEffect } from 'react'
+import Hls from 'hls.js'
 
 const RadioContext = createContext(null)
 
 export function RadioProvider({ children }) {
   const audioRef = useRef(null)
+  const hlsRef = useRef(null)
   const urlIndexRef = useRef(0)
   const activeUrlsRef = useRef([])
 
@@ -82,8 +84,21 @@ export function RadioProvider({ children }) {
 
     activeUrlsRef.current = urls
     urlIndexRef.current = 0
-    audio.src = urls[0]
-    audio.play().catch(() => {})
+
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
+
+    const url = urls[0]
+    if (url.includes('.m3u8') && Hls.isSupported()) {
+      const hls = new Hls()
+      hlsRef.current = hls
+      hls.loadSource(url)
+      hls.attachMedia(audio)
+      hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play().catch(() => {}))
+      hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { hls.destroy(); hlsRef.current = null } })
+    } else {
+      audio.src = url
+      audio.play().catch(() => {})
+    }
   }
 
   function play() {
@@ -94,6 +109,7 @@ export function RadioProvider({ children }) {
   function pause() {
     const audio = audioRef.current
     if (!audio) return
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     audio.pause()
     audio.src = ''
     activeUrlsRef.current = []
