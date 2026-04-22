@@ -5,7 +5,6 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { execFile } from 'child_process'
 import {
   findByUsername, findById, getAllUsers, createUser, updateUser, deleteUser,
   getAllStations, getActiveStations, createStation, updateStation, deleteStation,
@@ -23,13 +22,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],   // Tailwind inline styles
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      mediaSrc: ["'self'", 'https:'],            // radio streams
+      scriptSrc: ["'self'", 'https://www.youtube.com'],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://i.ytimg.com'],
+      mediaSrc: ["'self'", 'https:'],
       connectSrc: ["'self'"],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com'],
       objectSrc: ["'none'"],
     },
   },
@@ -65,40 +64,6 @@ const apiLimiter = rateLimit({
 
 app.use('/api/', apiLimiter)
 
-// ── yt-dlp integration ───────────────────────────────────
-
-const YTDLP = process.env.YTDLP_PATH || '/usr/local/bin/yt-dlp'
-const ytCache = new Map() // stationId -> resolved stream URL
-
-function resolveYoutubeUrl(youtubeUrl) {
-  return new Promise((resolve, reject) => {
-    execFile(YTDLP, ['-g', '-f', 'bestaudio/best', '--cookies', '/app/cookies.txt', youtubeUrl], { timeout: 30000 }, (err, stdout) => {
-      if (err) return reject(err)
-      const url = stdout.trim().split('\n')[0]
-      if (!url) return reject(new Error('yt-dlp returned no URL'))
-      resolve(url)
-    })
-  })
-}
-
-async function refreshYoutubeStations() {
-  const stations = getAllStations().filter(s => s.youtube_url)
-  if (!stations.length) return
-  console.log(`[yt-dlp] Refreshing ${stations.length} YouTube station(s)...`)
-  for (const s of stations) {
-    try {
-      const url = await resolveYoutubeUrl(s.youtube_url)
-      ytCache.set(s.id, url)
-      console.log(`[yt-dlp] Resolved: ${s.name}`)
-    } catch (e) {
-      console.error(`[yt-dlp] Failed for "${s.name}": ${e.message}`)
-    }
-  }
-}
-
-refreshYoutubeStations()
-setInterval(refreshYoutubeStations, 6 * 60 * 60 * 1000)
-
 // ── Helpers ──────────────────────────────────────────────
 
 const VALID_ROLES = new Set(['admin', 'user'])
@@ -112,7 +77,11 @@ function isValidUrl(str) {
 }
 
 function isValidYoutubeUrl(str) {
-  return isValidUrl(str)
+  try {
+    const u = new URL(str)
+    return (u.protocol === 'http:' || u.protocol === 'https:') &&
+      (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be'))
+  } catch { return false }
 }
 
 function isValidEmail(str) {
@@ -165,13 +134,6 @@ app.get('/api/auth/me', (req, res) => {
 
 app.get('/api/stations', (req, res) => {
   res.json(getActiveStations())
-})
-
-app.get('/api/stations/:id/stream-url', (req, res) => {
-  const id = parseInt(req.params.id, 10)
-  const url = ytCache.get(id)
-  if (!url) return res.status(503).json({ error: 'Stream URL not ready yet, try again shortly' })
-  res.json({ url })
 })
 
 // ── Public: Contacts ─────────────────────────────────────
@@ -272,11 +234,6 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
 
   try {
     const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url)
-    if (youtube_url) {
-      resolveYoutubeUrl(youtube_url)
-        .then(url => ytCache.set(station.id, url))
-        .catch(e => console.error(`[yt-dlp] Failed for new station ${station.id}: ${e.message}`))
-    }
     res.status(201).json(station)
   } catch (e) { res.status(400).json({ error: e.message }) }
 })
@@ -324,14 +281,8 @@ app.put('/api/admin/stations', requireAdmin, (req, res) => {
 
   try {
     updateStation(Number(id), data)
-    if (data.youtube_url) {
-      resolveYoutubeUrl(data.youtube_url)
-        .then(url => ytCache.set(Number(id), url))
-        .catch(e => console.error(`[yt-dlp] Failed for station ${id}: ${e.message}`))
-    }
     res.json({ success: true })
-  }
-  catch (e) { res.status(400).json({ error: e.message }) }
+  } catch (e) { res.status(400).json({ error: e.message }) }
 })
 
 app.delete('/api/admin/stations', requireAdmin, (req, res) => {

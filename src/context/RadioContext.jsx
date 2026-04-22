@@ -3,11 +3,24 @@ import Hls from 'hls.js'
 
 const RadioContext = createContext(null)
 
+function getYouTubeId(url) {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0]
+    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v')
+  } catch {}
+  return null
+}
+
 export function RadioProvider({ children }) {
   const audioRef = useRef(null)
   const hlsRef = useRef(null)
   const urlIndexRef = useRef(0)
   const activeUrlsRef = useRef([])
+  const ytPlayerRef = useRef(null)
+  const ytApiReadyRef = useRef(false)
+  const pendingVideoIdRef = useRef(null)
 
   const [stations, setStations] = useState([])
   const [current, setCurrent] = useState(null)
@@ -16,6 +29,23 @@ export function RadioProvider({ children }) {
   const [muted, setMuted] = useState(false)
   const [buffering, setBuffering] = useState(false)
   const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    window.onYouTubeIframeAPIReady = () => {
+      ytApiReadyRef.current = true
+      if (pendingVideoIdRef.current) {
+        _doPlayYT(pendingVideoIdRef.current)
+        pendingVideoIdRef.current = null
+      }
+    }
+    if (!window.YT || !window.YT.Player) {
+      const tag = document.createElement('script')
+      tag.src = 'https://www.youtube.com/iframe_api'
+      document.head.appendChild(tag)
+    } else {
+      ytApiReadyRef.current = true
+    }
+  }, [])
 
   useEffect(() => {
     fetch('/api/stations')
@@ -31,7 +61,6 @@ export function RadioProvider({ children }) {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
-
     const onWaiting = () => setBuffering(true)
     const onPlaying = () => setBuffering(false)
     const onError = () => {
@@ -41,13 +70,11 @@ export function RadioProvider({ children }) {
         urlIndexRef.current = next
         audio.src = urls[next]
         audio.play().catch(() => {})
-        // stay in buffering state
       } else {
         setBuffering(false)
         setIsPlaying(false)
       }
     }
-
     audio.addEventListener('waiting', onWaiting)
     audio.addEventListener('playing', onPlaying)
     audio.addEventListener('error', onError)
@@ -58,89 +85,112 @@ export function RadioProvider({ children }) {
     }
   }, [])
 
-  async function _startStream(station, vol, isMuted) {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.pause()
-    audio.volume = isMuted ? 0 : vol
-    setBuffering(true)
-    setIsPlaying(true)
-
-    let urls
-    if (station.youtube_url) {
-      try {
-        const res = await fetch(`/api/stations/${station.id}/stream-url`)
-        if (!res.ok) throw new Error()
-        const { url } = await res.json()
-        urls = [url]
-      } catch {
-        setBuffering(false)
-        setIsPlaying(false)
-        return
-      }
+  function _doPlayYT(videoId) {
+    const volInt = muted ? 0 : Math.round(volume * 100)
+    if (ytPlayerRef.current && ytPlayerRef.current.loadVideoById) {
+      ytPlayerRef.current.loadVideoById(videoId)
+      ytPlayerRef.current.setVolume(volInt)
     } else {
-      urls = station.stream_urls?.length ? station.stream_urls : [station.stream_url]
-    }
-
-    activeUrlsRef.current = urls
-    urlIndexRef.current = 0
-
-    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
-
-    const url = urls[0]
-    if (url.includes('.m3u8') && Hls.isSupported()) {
-      const hls = new Hls()
-      hlsRef.current = hls
-      hls.loadSource(url)
-      hls.attachMedia(audio)
-      hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play().catch(() => {}))
-      hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { hls.destroy(); hlsRef.current = null } })
-    } else {
-      audio.src = url
-      audio.play().catch(() => {})
+      ytPlayerRef.current = new window.YT.Player('yt-player', {
+        videoId,
+        playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, rel: 0, iv_load_policy: 3, modestbranding: 1 },
+        events: {
+          onReady: (e) => { e.target.setVolume(volInt); e.target.playVideo() },
+          onStateChange: (e) => {
+            if (e.data === window.YT.PlayerState.PLAYING) setBuffering(false)
+            if (e.data === window.YT.PlayerState.BUFFERING) setBuffering(true)
+          },
+          onError: () => { setBuffering(false); setIsPlaying(false) },
+        },
+      })
     }
   }
 
-  function play() {
-    if (!current) return
-    _startStream(current, volume, muted)
+  function _stopYT() {
+    if (ytPlayerRef.current) {
+      try { ytPlayerRef.current.stopVideo() } catch {}
+    }
   }
 
-  function pause() {
+  function _stopAudio() {
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     const audio = audioRef.current
     if (!audio) return
-    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null }
     audio.pause()
     audio.src = ''
     activeUrlsRef.current = []
+  }
+
+  function _startStream(station, vol, isMuted) {
+    const videoId = getYouTubeId(station.youtube_url)
+
+    if (videoId) {
+      _stopAudio()
+      setBuffering(true)
+      setIsPlaying(true)
+      if (!ytApiReadyRef.current) {
+        pendingVideoIdRef.current = videoId
+      } else {
+        _doPlayYT(videoId)
+      }
+    } else {
+      _stopYT()
+      const urls = station.stream_urls?.length ? station.stream_urls : (station.stream_url ? [station.stream_url] : [])
+      if (!urls.length) return
+      const audio = audioRef.current
+      if (!audio) return
+      audio.volume = isMuted ? 0 : vol
+      setBuffering(true)
+      setIsPlaying(true)
+      activeUrlsRef.current = urls
+      urlIndexRef.current = 0
+      const url = urls[0]
+      if (url.includes('.m3u8') && Hls.isSupported()) {
+        const hls = new Hls()
+        hlsRef.current = hls
+        hls.loadSource(url)
+        hls.attachMedia(audio)
+        hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play().catch(() => {}))
+        hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { hls.destroy(); hlsRef.current = null } })
+      } else {
+        audio.src = url
+        audio.play().catch(() => {})
+      }
+    }
+  }
+
+  function play() { if (current) _startStream(current, volume, muted) }
+
+  function pause() {
+    const videoId = current && getYouTubeId(current.youtube_url)
+    if (videoId) _stopYT(); else _stopAudio()
     setIsPlaying(false)
     setBuffering(false)
   }
 
-  function togglePlay() {
-    if (isPlaying) pause()
-    else play()
-  }
+  function togglePlay() { if (isPlaying) pause(); else play() }
 
   function selectStation(station) {
     setCurrent(station)
-    const audio = audioRef.current
-    if (audio) { audio.pause(); audio.src = '' }
+    _stopAudio()
+    _stopYT()
     _startStream(station, volume, muted)
   }
 
   function setVolumeValue(v) {
     setVolume(v)
     if (audioRef.current) audioRef.current.volume = v
+    if (ytPlayerRef.current?.setVolume) ytPlayerRef.current.setVolume(Math.round(v * 100))
     if (muted && v > 0) setMuted(false)
   }
 
   function toggleMute() {
-    const audio = audioRef.current
-    if (!audio) return
     const next = !muted
     setMuted(next)
-    audio.volume = next ? 0 : volume
+    if (audioRef.current) audioRef.current.volume = next ? 0 : volume
+    if (ytPlayerRef.current) {
+      try { next ? ytPlayerRef.current.mute() : (ytPlayerRef.current.unMute(), ytPlayerRef.current.setVolume(Math.round(volume * 100))) } catch {}
+    }
   }
 
   return (
@@ -148,6 +198,7 @@ export function RadioProvider({ children }) {
       stations, current, isPlaying, volume, muted, buffering, loaded,
       togglePlay, selectStation, setVolumeValue, toggleMute,
     }}>
+      <div id="yt-player" style={{ position: 'fixed', bottom: '-2px', right: '-2px', width: '1px', height: '1px', pointerEvents: 'none' }} />
       <audio ref={audioRef} preload="none" />
       {children}
     </RadioContext.Provider>
