@@ -8,10 +8,10 @@ RUN apt-get update && apt-get install -y python3 curl && \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY . .
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 RUN mkdir -p /app/data
 
