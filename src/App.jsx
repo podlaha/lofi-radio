@@ -42,9 +42,7 @@ function FooterPlayer() {
       <div className="flex items-center gap-6 w-full" style={{ maxWidth: '680px', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
 
         {/* Mini vinyl */}
-        <div className={`w-8 h-8 rounded-full bg-[#111] border border-[#2a2a2a] flex items-center justify-center shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`}>
-          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-[#e8a020] to-[#c07010]" />
-        </div>
+        <div className={`w-9 h-9 rounded-full shrink-0 vinyl ${isPlaying ? 'vinyl-spin' : ''}`} />
 
         {/* Play / pause */}
         <button onClick={togglePlay}

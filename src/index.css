@@ -52,7 +52,20 @@ body {
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* ── Vinyl spin ─────────────────────────── */
+/* ── Vinyl disc ─────────────────────────── */
+.vinyl {
+  background: radial-gradient(
+    circle,
+    #e8a020 0%,   #c07010 16%,
+    #111    17%,  #111    20%,
+    #2a2a2a 21%,  #111    26%,
+    #2a2a2a 27%,  #111    32%,
+    #2a2a2a 33%,  #111    38%,
+    #2a2a2a 39%,  #111    44%,
+    #2a2a2a 45%,  #0d0d0d 50%
+  );
+  box-shadow: 0 0 0 1.5px #333, inset 0 0 4px rgba(0,0,0,0.8);
+}
 .vinyl-spin {
   animation: vinyl-rotate 3s linear infinite;
 }
