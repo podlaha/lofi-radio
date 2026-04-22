@@ -31,6 +31,11 @@ export function RadioProvider({ children }) {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
+    const div = document.createElement('div')
+    div.id = 'yt-player'
+    div.style.cssText = 'position:fixed;bottom:-2px;right:-2px;width:1px;height:1px;pointer-events:none;'
+    document.body.appendChild(div)
+
     window.onYouTubeIframeAPIReady = () => {
       ytApiReadyRef.current = true
       if (pendingVideoIdRef.current) {
@@ -44,6 +49,11 @@ export function RadioProvider({ children }) {
       document.head.appendChild(tag)
     } else {
       ytApiReadyRef.current = true
+    }
+
+    return () => {
+      if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy() } catch {} }
+      if (document.body.contains(div)) document.body.removeChild(div)
     }
   }, [])
 
@@ -200,7 +210,6 @@ export function RadioProvider({ children }) {
       stations, current, isPlaying, volume, muted, buffering, loaded,
       togglePlay, selectStation, setVolumeValue, toggleMute,
     }}>
-      <div id="yt-player" style={{ position: 'fixed', bottom: '-2px', right: '-2px', width: '1px', height: '1px', pointerEvents: 'none' }} />
       <audio ref={audioRef} preload="none" />
       {children}
     </RadioContext.Provider>
