@@ -15,6 +15,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = 3001
+app.set('trust proxy', 1)
 
 // ── Security headers ─────────────────────────────────────
 
@@ -71,7 +72,7 @@ const ytCache = new Map() // stationId -> resolved stream URL
 
 function resolveYoutubeUrl(youtubeUrl) {
   return new Promise((resolve, reject) => {
-    execFile(YTDLP, ['-g', '-f', 'bestaudio/best', youtubeUrl], { timeout: 30000 }, (err, stdout) => {
+    execFile(YTDLP, ['-g', '-f', 'bestaudio/best', '--js-runtimes', 'nodejs', '--extractor-args', 'youtube:player_client=ios', youtubeUrl], { timeout: 30000 }, (err, stdout) => {
       if (err) return reject(err)
       const url = stdout.trim().split('\n')[0]
       if (!url) return reject(new Error('yt-dlp returned no URL'))
