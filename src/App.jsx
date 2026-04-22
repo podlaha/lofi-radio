@@ -38,7 +38,7 @@ function FooterPlayer() {
 
   return (
     <div className="z-40 border-t border-[#30363d] bg-[rgba(13,17,23,0.85)] nav-blur relative" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, width: '100%' }}>
-      <p className="absolute bottom-1 right-2 text-[10px] text-[#333]">Art &copy; <a href="https://www.reddit.com/user/louisselle_/" target="_blank" rel="noopener noreferrer" style={{ color: '#333', textDecoration: 'none' }}>reddit.com/user/louisselle_/</a></p>
+      <p className="absolute bottom-1 right-2 text-xs text-[#6e7681]">Art &copy; <a href="https://www.reddit.com/user/louisselle_/" target="_blank" rel="noopener noreferrer" style={{ color: '#6e7681', textDecoration: 'none' }}>reddit.com/user/louisselle_/</a></p>
       <div className="py-4 flex justify-center">
       <div className="flex items-center gap-8 w-full" style={{ maxWidth: '900px', paddingLeft: '2rem', paddingRight: '2rem' }}>
 
