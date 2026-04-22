@@ -23,11 +23,11 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 nav-blur bg-[rgba(13,17,23,0.85)] border-b border-[#30363d]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
 
           <Link to="/" className="flex items-center gap-2 font-bold text-lg tracking-tight">
-            <img src="/lofi_radio_icon.svg" alt="LoFi radio" className="w-[42px] h-[42px]" />
-            <span className="gradient-text">LoFi radio</span>
+            <img src="/lofi_radio_icon.svg" alt="LoFi radio" className="w-[52px] h-[52px]" />
+            <span className="gradient-text text-xl">LoFi radio</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-1">
