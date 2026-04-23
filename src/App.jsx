@@ -55,7 +55,6 @@ function FooterPlayer() {
 
         {/* Station name + live dot */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {isPlaying && <span className="w-2 h-2 rounded-full bg-[#e8a020] animate-pulse shrink-0" />}
           <div className="min-w-0">
             <p className="text-base font-medium text-[#e6edf3] truncate leading-tight">{current.name}</p>
             <p className="text-sm text-[#484f58] leading-tight">{current.genre}</p>
