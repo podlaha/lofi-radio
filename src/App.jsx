@@ -43,7 +43,12 @@ function FooterPlayer() {
       <div className="flex items-center gap-8 w-full" style={{ maxWidth: '900px', paddingLeft: '2rem', paddingRight: '2rem' }}>
 
         {/* Mini vinyl */}
-        <div className={`w-12 h-12 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 22%, transparent 38%), radial-gradient(circle, #e8a020 0%, #c07010 15%, #1a1a1a 16%, #1a1a1a 22%, #2a2a2a 23%, #1a1a1a 30%, #2a2a2a 31%, #1a1a1a 38%, #2a2a2a 39%, #1a1a1a 46%, #2a2a2a 47%, #111 100%)', boxShadow: '0 0 0 2px #444' }} />
+        <div className={`w-12 h-12 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{
+          background: isPlaying
+            ? 'linear-gradient(120deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 22%, transparent 38%), radial-gradient(circle, #e8a020 0%, #c07010 15%, #1a1a1a 16%, #1a1a1a 22%, #2a2a2a 23%, #1a1a1a 30%, #2a2a2a 31%, #1a1a1a 38%, #2a2a2a 39%, #1a1a1a 46%, #2a2a2a 47%, #111 100%)'
+            : 'linear-gradient(120deg, rgba(255,255,255,0.08) 0%, transparent 38%), radial-gradient(circle, #1a1a1a 0%, #1a1a1a 22%, #2a2a2a 23%, #1a1a1a 30%, #2a2a2a 31%, #1a1a1a 38%, #2a2a2a 39%, #1a1a1a 46%, #2a2a2a 47%, #111 100%)',
+          boxShadow: '0 0 0 2px #444',
+        }} />
 
         {/* Play / pause */}
         <button onClick={togglePlay}
