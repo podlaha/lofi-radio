@@ -11,19 +11,28 @@ import Login from './pages/Login'
 import Admin from './pages/Admin'
 import ProtectedRoute from './components/ProtectedRoute'
 
-function SpacebarToggle() {
-  const { togglePlay, current } = useRadio()
+const VOLUME_STEP = 0.05
+
+function KeyboardControls() {
+  const { togglePlay, current, volume, muted, setVolumeValue } = useRadio()
   useEffect(() => {
     function onKeyDown(e) {
-      if (e.code !== 'Space') return
+      if (!['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) return
       const tag = document.activeElement?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return
       e.preventDefault()
-      if (current) togglePlay()
+      if (e.code === 'Space') {
+        if (current) togglePlay()
+        return
+      }
+      // ArrowUp / ArrowDown adjust the volume
+      const base = muted ? 0 : volume
+      const delta = e.code === 'ArrowUp' ? VOLUME_STEP : -VOLUME_STEP
+      setVolumeValue(Math.min(1, Math.max(0, base + delta)))
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [togglePlay, current])
+  }, [togglePlay, current, volume, muted, setVolumeValue])
   return null
 }
 
@@ -123,7 +132,7 @@ export default function App() {
       <RadioProvider>
         <div className="min-h-screen flex flex-col bg-[#181c20] text-[#e6edf3]">
           <Navbar />
-          <SpacebarToggle />
+          <KeyboardControls />
           <main className="flex-1 flex flex-col pb-24">
             <Routes>
               <Route path="/" element={<Home />} />

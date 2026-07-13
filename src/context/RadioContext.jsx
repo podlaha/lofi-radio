@@ -3,6 +3,17 @@ import Hls from 'hls.js'
 
 const RadioContext = createContext(null)
 
+const clamp01 = (n) => Math.min(1, Math.max(0, n))
+
+// Perceived loudness follows a power law, so a linear slider makes almost all of
+// the audible change happen in the bottom third of its travel. Map the linear
+// slider position to an "audio taper" gain curve (like Spotify/SoundCloud) so the
+// perceived change is spread evenly across the slider — giving much finer control
+// at low volumes. Higher exponent = more resolution down low. `volume` state stays
+// the linear 0..1 slider position; this is applied only when setting actual gain.
+const VOLUME_CURVE = 2.5
+const toGain = (position) => Math.pow(clamp01(position), VOLUME_CURVE)
+
 function getYouTubeId(url) {
   if (!url) return null
   try {
@@ -96,7 +107,7 @@ export function RadioProvider({ children }) {
   }, [])
 
   function _doPlayYT(videoId) {
-    const volInt = muted ? 0 : Math.round(volume * 100)
+    const volInt = muted ? 0 : Math.round(toGain(volume) * 100)
     if (ytPlayerRef.current && ytPlayerRef.current.loadVideoById) {
       ytPlayerRef.current.loadVideoById(videoId)
       ytPlayerRef.current.setVolume(volInt)
@@ -151,7 +162,7 @@ export function RadioProvider({ children }) {
       if (!urls.length) return
       const audio = audioRef.current
       if (!audio) return
-      audio.volume = isMuted ? 0 : vol
+      audio.volume = isMuted ? 0 : toGain(vol)
       setBuffering(true)
       setIsPlaying(true)
       activeUrlsRef.current = urls
@@ -190,18 +201,19 @@ export function RadioProvider({ children }) {
   }
 
   function setVolumeValue(v) {
-    setVolume(v)
-    if (audioRef.current) audioRef.current.volume = v
-    if (ytPlayerRef.current?.setVolume) ytPlayerRef.current.setVolume(Math.round(v * 100))
-    if (muted && v > 0) setMuted(false)
+    const pos = clamp01(v)
+    setVolume(pos)
+    if (audioRef.current) audioRef.current.volume = toGain(pos)
+    if (ytPlayerRef.current?.setVolume) ytPlayerRef.current.setVolume(Math.round(toGain(pos) * 100))
+    if (muted && pos > 0) setMuted(false)
   }
 
   function toggleMute() {
     const next = !muted
     setMuted(next)
-    if (audioRef.current) audioRef.current.volume = next ? 0 : volume
+    if (audioRef.current) audioRef.current.volume = next ? 0 : toGain(volume)
     if (ytPlayerRef.current) {
-      try { next ? ytPlayerRef.current.mute() : (ytPlayerRef.current.unMute(), ytPlayerRef.current.setVolume(Math.round(volume * 100))) } catch {}
+      try { next ? ytPlayerRef.current.mute() : (ytPlayerRef.current.unMute(), ytPlayerRef.current.setVolume(Math.round(toGain(volume) * 100))) } catch {}
     }
   }
 
