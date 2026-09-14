@@ -68,6 +68,15 @@ try {
   console.log('[DB] Migrated: added youtube_url column.')
 } catch (_) { /* column already exists */ }
 
+// Migration: add youtube_channel_id column if it doesn't exist yet. When set,
+// the server periodically resolves the channel's current live video and keeps
+// youtube_url in sync (see server/youtubeLive.js) — for channels whose live
+// video ID changes whenever the broadcaster restarts the stream.
+try {
+  db.run("ALTER TABLE stations ADD COLUMN youtube_channel_id TEXT NOT NULL DEFAULT ''")
+  console.log('[DB] Migrated: added youtube_channel_id column.')
+} catch (_) { /* column already exists */ }
+
 // Migrate existing rows: populate stream_urls from stream_url where still empty
 const needsMigration = db.exec("SELECT id, stream_url FROM stations WHERE stream_urls = '[]'")
 if (needsMigration.length && needsMigration[0].values.length) {
@@ -208,11 +217,11 @@ export function getActiveStations() {
   return values.map(row => parseStation(Object.fromEntries(columns.map((col, i) => [col, row[i]]))))
 }
 
-export function createStation(name, description, stream_urls, genre, sort_order = 0, youtube_url = '') {
+export function createStation(name, description, stream_urls, genre, sort_order = 0, youtube_url = '', youtube_channel_id = '') {
   const urls = Array.isArray(stream_urls) ? stream_urls : [stream_urls]
   db.run(
-    'INSERT INTO stations (name, description, stream_url, stream_urls, genre, sort_order, youtube_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [name, description, urls[0] || '', JSON.stringify(urls), genre, sort_order, youtube_url]
+    'INSERT INTO stations (name, description, stream_url, stream_urls, genre, sort_order, youtube_url, youtube_channel_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [name, description, urls[0] || '', JSON.stringify(urls), genre, sort_order, youtube_url, youtube_channel_id]
   )
   save()
   const result = db.exec('SELECT * FROM stations ORDER BY id DESC LIMIT 1')
@@ -221,7 +230,7 @@ export function createStation(name, description, stream_urls, genre, sort_order 
   return parseStation(Object.fromEntries(columns.map((col, i) => [col, values[0][i]])))
 }
 
-const ALLOWED_STATION_FIELDS = new Set(['name', 'description', 'stream_url', 'stream_urls', 'genre', 'active', 'sort_order', 'youtube_url'])
+const ALLOWED_STATION_FIELDS = new Set(['name', 'description', 'stream_url', 'stream_urls', 'genre', 'active', 'sort_order', 'youtube_url', 'youtube_channel_id'])
 
 export function updateStation(id, data) {
   if (data.stream_urls !== undefined) {

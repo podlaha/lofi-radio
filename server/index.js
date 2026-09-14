@@ -10,6 +10,7 @@ import {
   getAllStations, getActiveStations, createStation, updateStation, deleteStation,
   getContacts, updateContact,
 } from './db.js'
+import { startLiveRefresh } from './youtubeLive.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -90,6 +91,23 @@ function isValidEmail(str) {
 
 function trim(val) {
   return typeof val === 'string' ? val.trim() : val
+}
+
+// Accepts a bare channel ID (UCxxxxxxxx...), a handle (@name), or a full
+// channel URL (youtube.com/channel/UC... or youtube.com/@name) and returns
+// the bare ID/handle youtubeLive.js expects.
+function extractChannelId(str) {
+  if (!str) return ''
+  const trimmed = str.trim()
+  let m = trimmed.match(/youtube\.com\/channel\/([\w-]+)/)
+  if (m) return m[1]
+  m = trimmed.match(/youtube\.com\/(@[\w.-]+)/)
+  if (m) return m[1]
+  return trimmed
+}
+
+function isValidChannelId(str) {
+  return /^UC[\w-]{20,26}$/.test(str) || /^@[\w.-]{2,64}$/.test(str)
 }
 
 // ── Middleware ───────────────────────────────────────────
@@ -221,11 +239,13 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
   const sort_order = parseInt(req.body.sort_order, 10) || 0
   const raw_urls = req.body.stream_urls || []
   const youtube_url = trim(req.body.youtube_url) || ''
+  const youtube_channel_id = extractChannelId(trim(req.body.youtube_channel_id) || '')
 
   if (!name || name.length > 128) return res.status(400).json({ error: 'Station name is required (max 128 chars)' })
   if (description.length > 512) return res.status(400).json({ error: 'Description too long (max 512)' })
   if (genre.length > 64) return res.status(400).json({ error: 'Genre too long (max 64)' })
   if (youtube_url && !isValidYoutubeUrl(youtube_url)) return res.status(400).json({ error: 'Invalid YouTube URL' })
+  if (youtube_channel_id && !isValidChannelId(youtube_channel_id)) return res.status(400).json({ error: 'Invalid YouTube channel ID/handle/URL' })
 
   const stream_urls = Array.isArray(raw_urls) ? raw_urls.map(u => trim(u)).filter(Boolean) : []
   if (!youtube_url && !stream_urls.length) return res.status(400).json({ error: 'Either a YouTube URL or at least one stream URL is required' })
@@ -233,7 +253,7 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
   if (invalid) return res.status(400).json({ error: `Invalid stream URL: ${invalid}` })
 
   try {
-    const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url)
+    const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url, youtube_channel_id)
     res.status(201).json(station)
   } catch (e) { res.status(400).json({ error: e.message }) }
 })
@@ -277,6 +297,11 @@ app.put('/api/admin/stations', requireAdmin, (req, res) => {
     const v = trim(raw.youtube_url)
     if (v && !isValidYoutubeUrl(v)) return res.status(400).json({ error: 'Invalid YouTube URL' })
     data.youtube_url = v
+  }
+  if (raw.youtube_channel_id !== undefined) {
+    const v = extractChannelId(trim(raw.youtube_channel_id))
+    if (v && !isValidChannelId(v)) return res.status(400).json({ error: 'Invalid YouTube channel ID/handle/URL' })
+    data.youtube_channel_id = v
   }
 
   try {
@@ -327,4 +352,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[server] Running on http://0.0.0.0:${PORT}`)
+  startLiveRefresh()
 })

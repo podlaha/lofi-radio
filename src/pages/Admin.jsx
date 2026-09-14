@@ -153,7 +153,7 @@ function StationsTab() {
   const [successMsg, setSuccessMsg] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editStation, setEditStation] = useState(null)
-  const [form, setForm] = useState({ name: '', description: '', stream_urls: [''], genre: '', sort_order: 0, youtube_url: '' })
+  const [form, setForm] = useState({ name: '', description: '', stream_urls: [''], genre: '', sort_order: 0, youtube_url: '', youtube_channel_id: '' })
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
 
@@ -170,10 +170,10 @@ function StationsTab() {
   useEffect(() => { fetchStations() }, [])
 
   function showSuccess(msg) { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000) }
-  function openAdd() { setForm({ name: '', description: '', stream_urls: [''], genre: '', sort_order: stations.length, youtube_url: '' }); setFormError(''); setEditStation(null); setShowModal(true) }
+  function openAdd() { setForm({ name: '', description: '', stream_urls: [''], genre: '', sort_order: stations.length, youtube_url: '', youtube_channel_id: '' }); setFormError(''); setEditStation(null); setShowModal(true) }
   function openEdit(s) {
     const urls = s.stream_urls?.length ? s.stream_urls : [s.stream_url || '']
-    setForm({ name: s.name, description: s.description, stream_urls: urls, genre: s.genre, sort_order: s.sort_order, youtube_url: s.youtube_url || '' })
+    setForm({ name: s.name, description: s.description, stream_urls: urls, genre: s.genre, sort_order: s.sort_order, youtube_url: s.youtube_url || '', youtube_channel_id: s.youtube_channel_id || '' })
     setFormError(''); setEditStation(s); setShowModal(true)
   }
 
@@ -189,6 +189,7 @@ function StationsTab() {
     const urls = form.stream_urls.map(u => u.trim()).filter(Boolean)
     const sort_order = parseInt(form.sort_order, 10)
     const youtube_url = form.youtube_url.trim()
+    const youtube_channel_id = form.youtube_channel_id.trim()
 
     if (!name) { setFormError('Station name is required.'); setFormLoading(false); return }
     if (!youtube_url && !urls.length) { setFormError('Either a YouTube URL or at least one stream URL is required.'); setFormLoading(false); return }
@@ -199,7 +200,7 @@ function StationsTab() {
 
     try {
       let res
-      const body = { name, description, stream_urls: urls, genre, sort_order, youtube_url }
+      const body = { name, description, stream_urls: urls, genre, sort_order, youtube_url, youtube_channel_id }
       if (editStation) {
         res = await fetch('/api/admin/stations', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editStation.id, ...body }) })
       } else {
@@ -246,6 +247,7 @@ function StationsTab() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-[#e6edf3] truncate">{s.name}</p>
                   {s.youtube_url && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 border border-red-500/30 text-red-400 font-medium">LIVE</span>}
+                  {s.youtube_channel_id && <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-[#e8a020]/15 border border-[#e8a020]/30 text-[#e8a020] font-medium">AUTO</span>}
                 </div>
                 <p className="text-xs text-[#484f58] truncate">{s.genre}{s.description ? ` · ${s.description}` : ''}</p>
               </div>
@@ -279,6 +281,14 @@ function StationsTab() {
               <div>
                 <label className="block text-xs text-[#8b949e] mb-1">YouTube URL <span className="text-[#484f58] font-normal">(paste a YouTube link to embed the stream)</span></label>
                 <input type="url" placeholder="https://www.youtube.com/watch?v=..." value={form.youtube_url} onChange={e => setForm(p => ({ ...p, youtube_url: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs text-[#8b949e] mb-1">
+                  Auto-refresh live video <span className="text-[#484f58] font-normal">(optional — channel URL, @handle, or ID; keeps the YouTube URL above pointed at whatever is live now)</span>
+                </label>
+                <input type="text" placeholder="https://www.youtube.com/channel/UC... or @handle"
+                  value={form.youtube_channel_id} onChange={e => setForm(p => ({ ...p, youtube_channel_id: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
               </div>
               <div>
