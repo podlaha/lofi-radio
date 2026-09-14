@@ -36,23 +36,39 @@ function KeyboardControls() {
   return null
 }
 
+function ArtCredit({ className = '' }) {
+  return (
+    <p className={`text-[#8b949e] ${className}`}>
+      Art &copy; <a href="https://www.reddit.com/user/louisselle_/" target="_blank" rel="noopener noreferrer"
+        className="text-[#8b949e] hover:text-[#e8a020] transition-colors" style={{ textDecoration: 'none' }}>
+        reddit.com/user/louisselle_/
+      </a>
+    </p>
+  )
+}
+
 function FooterPlayer() {
   const {
     stations, current, isPlaying, volume, muted, buffering, loaded,
     togglePlay, selectStation, setVolumeValue, toggleMute,
   } = useRadio()
   const [stationOpen, setStationOpen] = useState(false)
+  const location = useLocation()
+
+  // Close the station dropdown whenever the route changes, so it doesn't
+  // stay open and float over the newly-navigated-to page.
+  useEffect(() => { setStationOpen(false) }, [location.pathname])
 
   if (!loaded || !current) return null
 
   return (
     <div className="z-40 border-t border-[#30363d] bg-[rgba(13,17,23,0.85)] nav-blur relative" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, width: '100%' }}>
-      <p className="absolute bottom-1 right-2 text-xs text-[#6e7681]">Art &copy; <a href="https://www.reddit.com/user/louisselle_/" target="_blank" rel="noopener noreferrer" style={{ color: '#6e7681', textDecoration: 'none' }}>reddit.com/user/louisselle_/</a></p>
-      <div className="py-4 flex justify-center">
-      <div className="flex items-center gap-8 w-full" style={{ maxWidth: '900px', paddingLeft: '2rem', paddingRight: '2rem' }}>
+      <ArtCredit className="hidden sm:block absolute bottom-1 right-2 text-xs" />
+      <div className="py-3 sm:py-4 flex flex-col items-center">
+      <div className="flex items-center gap-3 sm:gap-8 w-full max-w-[900px] px-4 sm:px-8">
 
-        {/* Mini vinyl */}
-        <div className={`w-12 h-12 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{
+        {/* Mini vinyl - hidden on small screens to make room for controls */}
+        <div className={`hidden sm:block w-12 h-12 rounded-full shrink-0 ${isPlaying ? 'vinyl-spin' : ''}`} style={{
           background: isPlaying
             ? 'linear-gradient(120deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 22%, transparent 38%), radial-gradient(circle, #e8a020 0%, #c07010 15%, #1a1a1a 16%, #1a1a1a 22%, #2a2a2a 23%, #1a1a1a 30%, #2a2a2a 31%, #1a1a1a 38%, #2a2a2a 39%, #1a1a1a 46%, #2a2a2a 47%, #111 100%)'
             : 'linear-gradient(120deg, rgba(255,255,255,0.08) 0%, transparent 38%), radial-gradient(circle, #1a1a1a 0%, #1a1a1a 22%, #2a2a2a 23%, #1a1a1a 30%, #2a2a2a 31%, #1a1a1a 38%, #2a2a2a 39%, #1a1a1a 46%, #2a2a2a 47%, #111 100%)',
@@ -71,7 +87,7 @@ function FooterPlayer() {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="min-w-0">
             <p className="text-base font-medium text-[#e6edf3] truncate leading-tight">{current.name}</p>
-            <p className="text-sm text-[#484f58] leading-tight">{current.genre}</p>
+            <p className="text-sm text-[#8b949e] truncate leading-tight">{current.genre}</p>
           </div>
         </div>
 
@@ -79,9 +95,9 @@ function FooterPlayer() {
         {stations.length > 0 && (
           <div className="relative shrink-0">
             <button onClick={() => setStationOpen(p => !p)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#2c3138] hover:border-[#e8a020]/40 text-[#8b949e] hover:text-[#e6edf3] text-sm transition-all duration-200">
+              className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border border-[#2c3138] hover:border-[#e8a020]/40 text-[#8b949e] hover:text-[#e6edf3] text-sm transition-all duration-200">
               <Radio size={15} />
-              <span>Stations</span>
+              <span className="hidden sm:inline">Stations</span>
               <ChevronUp size={15} className={`transition-transform duration-200 ${stationOpen ? '' : 'rotate-180'}`} />
             </button>
 
@@ -98,7 +114,7 @@ function FooterPlayer() {
                       <Radio size={13} className="shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{s.name}</p>
-                        <p className="text-xs text-[#484f58] truncate">{s.genre}</p>
+                        <p className="text-xs text-[#8b949e] truncate">{s.genre}</p>
                       </div>
                       {current.id === s.id && isPlaying && (
                         <span className="w-2 h-2 rounded-full bg-[#e8a020] animate-pulse shrink-0" />
@@ -119,8 +135,9 @@ function FooterPlayer() {
         <input type="range" min="0" max="1" step="0.01"
           value={muted ? 0 : volume}
           onChange={e => setVolumeValue(parseFloat(e.target.value))}
-          className="volume-slider w-36 shrink-0" />
+          className="volume-slider w-16 sm:w-36 shrink-0" />
       </div>
+      <ArtCredit className="sm:hidden mt-1.5 text-[10px]" />
       </div>
     </div>
   )

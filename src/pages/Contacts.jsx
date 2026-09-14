@@ -34,11 +34,11 @@ export default function Contacts() {
   const info = contacts.filter(c => ['location', 'availability'].includes(c.key) && c.value)
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center px-4 py-16">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center px-4 pt-16 pb-16 sm:pt-24">
       <div className="w-full max-w-sm">
 
         <div className="mb-10">
-          <p className="text-[10px] text-[#484f58] tracking-widest uppercase font-mono mb-3">Contact</p>
+          <p className="text-[10px] text-[#8b949e] tracking-widest uppercase font-mono mb-3">Contact</p>
           {description && (
             <p className="text-[#8b949e] text-sm leading-relaxed">{description}</p>
           )}
@@ -50,8 +50,8 @@ export default function Contacts() {
               const Icon = ICONS[key]
               return (
                 <div key={key} className="flex items-center gap-3 text-sm">
-                  {Icon && <Icon size={14} className="text-[#484f58] shrink-0" />}
-                  <span className="text-[#484f58] w-24 shrink-0 font-mono text-xs">{label}</span>
+                  {Icon && <Icon size={14} className="text-[#8b949e] shrink-0" />}
+                  <span className="text-[#8b949e] w-24 shrink-0 font-mono text-xs">{label}</span>
                   <span className="text-[#8b949e]">{value}</span>
                 </div>
               )
@@ -73,7 +73,7 @@ export default function Contacts() {
                 <a key={key} href={href} target={key !== 'email' ? '_blank' : undefined} rel="noreferrer"
                   className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#2c3138] hover:border-[#e8a020]/40 hover:text-[#e8a020] text-[#8b949e] transition-all duration-200 text-sm group">
                   {Icon && <Icon size={14} className="shrink-0 group-hover:text-[#e8a020] transition-colors" />}
-                  <span className="font-mono text-xs text-[#484f58] w-16 shrink-0">{label}</span>
+                  <span className="font-mono text-xs text-[#8b949e] w-16 shrink-0">{label}</span>
                   <span className="truncate">{value}</span>
                 </a>
               )
@@ -82,7 +82,7 @@ export default function Contacts() {
         )}
 
         {contacts.length === 0 && (
-          <p className="text-sm text-[#484f58]">No contact information available yet.</p>
+          <p className="text-sm text-[#8b949e]">No contact information available yet.</p>
         )}
       </div>
     </div>
