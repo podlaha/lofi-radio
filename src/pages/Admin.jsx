@@ -153,7 +153,7 @@ function StationsTab() {
   const [successMsg, setSuccessMsg] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editStation, setEditStation] = useState(null)
-  const [form, setForm] = useState({ name: '', description: '', stream_urls: [''], genre: '', sort_order: 0, youtube_url: '', youtube_channel_id: '' })
+  const [form, setForm] = useState({ name: '', description: '', stream_urls: [''], genre: '', sort_order: 0, youtube_url: '', youtube_channel_id: '', youtube_title_match: '' })
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
 
@@ -170,10 +170,10 @@ function StationsTab() {
   useEffect(() => { fetchStations() }, [])
 
   function showSuccess(msg) { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000) }
-  function openAdd() { setForm({ name: '', description: '', stream_urls: [''], genre: '', sort_order: stations.length, youtube_url: '', youtube_channel_id: '' }); setFormError(''); setEditStation(null); setShowModal(true) }
+  function openAdd() { setForm({ name: '', description: '', stream_urls: [''], genre: '', sort_order: stations.length, youtube_url: '', youtube_channel_id: '', youtube_title_match: '' }); setFormError(''); setEditStation(null); setShowModal(true) }
   function openEdit(s) {
     const urls = s.stream_urls?.length ? s.stream_urls : [s.stream_url || '']
-    setForm({ name: s.name, description: s.description, stream_urls: urls, genre: s.genre, sort_order: s.sort_order, youtube_url: s.youtube_url || '', youtube_channel_id: s.youtube_channel_id || '' })
+    setForm({ name: s.name, description: s.description, stream_urls: urls, genre: s.genre, sort_order: s.sort_order, youtube_url: s.youtube_url || '', youtube_channel_id: s.youtube_channel_id || '', youtube_title_match: s.youtube_title_match || '' })
     setFormError(''); setEditStation(s); setShowModal(true)
   }
 
@@ -190,6 +190,7 @@ function StationsTab() {
     const sort_order = parseInt(form.sort_order, 10)
     const youtube_url = form.youtube_url.trim()
     const youtube_channel_id = form.youtube_channel_id.trim()
+    const youtube_title_match = form.youtube_title_match.trim()
 
     if (!name) { setFormError('Station name is required.'); setFormLoading(false); return }
     if (!youtube_url && !urls.length) { setFormError('Either a YouTube URL or at least one stream URL is required.'); setFormLoading(false); return }
@@ -200,7 +201,7 @@ function StationsTab() {
 
     try {
       let res
-      const body = { name, description, stream_urls: urls, genre, sort_order, youtube_url, youtube_channel_id }
+      const body = { name, description, stream_urls: urls, genre, sort_order, youtube_url, youtube_channel_id, youtube_title_match }
       if (editStation) {
         res = await fetch('/api/admin/stations', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editStation.id, ...body }) })
       } else {
@@ -291,6 +292,16 @@ function StationsTab() {
                   value={form.youtube_channel_id} onChange={e => setForm(p => ({ ...p, youtube_channel_id: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
               </div>
+              {form.youtube_channel_id && (
+                <div>
+                  <label className="block text-xs text-[#8b949e] mb-1">
+                    Live title match <span className="text-[#484f58] font-normal">(optional — for channels running several live streams at once, pick the one whose title contains this text)</span>
+                  </label>
+                  <input type="text" placeholder="e.g. lofi hip hop radio"
+                    value={form.youtube_title_match} onChange={e => setForm(p => ({ ...p, youtube_title_match: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-[#8b949e] mb-1">
                   Stream URLs {!form.youtube_url && '*'} <span className="text-[#484f58] font-normal">{form.youtube_url ? '(optional when YouTube URL is set)' : '(first = primary, rest = fallbacks)'}</span>

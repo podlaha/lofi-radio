@@ -240,12 +240,14 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
   const raw_urls = req.body.stream_urls || []
   const youtube_url = trim(req.body.youtube_url) || ''
   const youtube_channel_id = extractChannelId(trim(req.body.youtube_channel_id) || '')
+  const youtube_title_match = trim(req.body.youtube_title_match) || ''
 
   if (!name || name.length > 128) return res.status(400).json({ error: 'Station name is required (max 128 chars)' })
   if (description.length > 512) return res.status(400).json({ error: 'Description too long (max 512)' })
   if (genre.length > 64) return res.status(400).json({ error: 'Genre too long (max 64)' })
   if (youtube_url && !isValidYoutubeUrl(youtube_url)) return res.status(400).json({ error: 'Invalid YouTube URL' })
   if (youtube_channel_id && !isValidChannelId(youtube_channel_id)) return res.status(400).json({ error: 'Invalid YouTube channel ID/handle/URL' })
+  if (youtube_title_match.length > 128) return res.status(400).json({ error: 'Live title match too long (max 128)' })
 
   const stream_urls = Array.isArray(raw_urls) ? raw_urls.map(u => trim(u)).filter(Boolean) : []
   if (!youtube_url && !stream_urls.length) return res.status(400).json({ error: 'Either a YouTube URL or at least one stream URL is required' })
@@ -253,7 +255,7 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
   if (invalid) return res.status(400).json({ error: `Invalid stream URL: ${invalid}` })
 
   try {
-    const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url, youtube_channel_id)
+    const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url, youtube_channel_id, youtube_title_match)
     res.status(201).json(station)
   } catch (e) { res.status(400).json({ error: e.message }) }
 })
@@ -302,6 +304,11 @@ app.put('/api/admin/stations', requireAdmin, (req, res) => {
     const v = extractChannelId(trim(raw.youtube_channel_id))
     if (v && !isValidChannelId(v)) return res.status(400).json({ error: 'Invalid YouTube channel ID/handle/URL' })
     data.youtube_channel_id = v
+  }
+  if (raw.youtube_title_match !== undefined) {
+    const v = trim(raw.youtube_title_match)
+    if (v.length > 128) return res.status(400).json({ error: 'Live title match too long (max 128)' })
+    data.youtube_title_match = v
   }
 
   try {
