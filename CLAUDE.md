@@ -16,6 +16,8 @@ There is no test suite and no lint script configured.
 
 The Vite dev server proxies `/api/*` to `http://localhost:3001` (see `vite.config.js`), so run both halves via `npm run dev` when working on anything that touches the API.
 
+The server **requires `SESSION_SECRET`** in the environment and exits immediately if it's unset (no hardcoded fallback - that was removed after a security review found the fallback value, public in git history, would otherwise sign every session cookie in a deployment that forgot to set it). Set it locally with e.g. `SESSION_SECRET=$(openssl rand -hex 32) npm run dev:server`; in Coolify it's set as an environment variable on the app itself.
+
 ## Architecture
 
 This is a personal site with an embedded internet-radio player, split into an Express API/backend and a React SPA frontend, built together into one deployable Node process.

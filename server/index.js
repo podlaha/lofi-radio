@@ -17,6 +17,15 @@ const app = express()
 const PORT = 3001
 app.set('trust proxy', 1)
 
+// Refuse to start without a real session secret rather than silently signing
+// cookies with a well-known fallback value - that fallback previously lived
+// here as source code, which is public in this repo's git history.
+if (!process.env.SESSION_SECRET) {
+  console.error('[server] FATAL: SESSION_SECRET environment variable is not set.')
+  console.error('[server] Set it before starting the server, e.g.: SESSION_SECRET=$(openssl rand -hex 32)')
+  process.exit(1)
+}
+
 // ── Security headers ─────────────────────────────────────
 
 app.use(helmet({
@@ -40,10 +49,14 @@ app.use(express.json({ limit: '16kb' }))
 app.use(express.urlencoded({ extended: true, limit: '16kb' }))
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'bK9mX2pQ7nR4vY8wZ1aE5cF3jH6tL0sD-balkonek',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 },
+  // 'auto' marks the cookie Secure when the request is actually HTTPS - works
+  // in production behind the Traefik/Cloudflare proxy (via the 'trust proxy'
+  // setting above and the resulting X-Forwarded-Proto header) while still
+  // allowing plain-HTTP local development without a reverse proxy.
+  cookie: { secure: 'auto', httpOnly: true, sameSite: 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 },
 }))
 
 // ── Rate limiting ────────────────────────────────────────
