@@ -193,7 +193,13 @@ function StationsTab() {
     const youtube_title_match = form.youtube_title_match.trim()
 
     if (!name) { setFormError('Station name is required.'); setFormLoading(false); return }
-    if (!youtube_url && !urls.length) { setFormError('Either a YouTube URL or at least one stream URL is required.'); setFormLoading(false); return }
+    // Not required when auto-refresh is configured - it'll populate youtube_url
+    // on its own within a few minutes, with no manual seed value needed.
+    if (!youtube_url && !urls.length && !youtube_channel_id) {
+      setFormError('Either a YouTube URL, a stream URL, or an auto-refresh channel is required.')
+      setFormLoading(false)
+      return
+    }
     if (isNaN(sort_order)) { setFormError('Sort order must be a number.'); setFormLoading(false); return }
 
     const invalidUrl = urls.find(u => { try { const p = new URL(u); return p.protocol !== 'http:' && p.protocol !== 'https:' } catch { return true } })
@@ -280,7 +286,13 @@ function StationsTab() {
                 </div>
               ))}
               <div>
-                <label className="block text-xs text-[#8b949e] mb-1">YouTube URL <span className="text-[#484f58] font-normal">(paste a YouTube link to embed the stream)</span></label>
+                <label className="block text-xs text-[#8b949e] mb-1">
+                  YouTube URL <span className="text-[#484f58] font-normal">
+                    {form.youtube_channel_id
+                      ? '(auto-managed by the refresh below — edits here get overwritten within a few minutes)'
+                      : '(paste a YouTube link to embed the stream)'}
+                  </span>
+                </label>
                 <input type="url" placeholder="https://www.youtube.com/watch?v=..." value={form.youtube_url} onChange={e => setForm(p => ({ ...p, youtube_url: e.target.value }))}
                   className="w-full px-3 py-2 rounded-lg bg-[#2c3138] border border-[#30363d] text-[#e6edf3] text-sm focus:outline-none focus:border-[#e8a020] transition-colors" />
               </div>
@@ -304,7 +316,7 @@ function StationsTab() {
               )}
               <div>
                 <label className="block text-xs text-[#8b949e] mb-1">
-                  Stream URLs {!form.youtube_url && '*'} <span className="text-[#484f58] font-normal">{form.youtube_url ? '(optional when YouTube URL is set)' : '(first = primary, rest = fallbacks)'}</span>
+                  Stream URLs {!form.youtube_url && !form.youtube_channel_id && '*'} <span className="text-[#484f58] font-normal">{form.youtube_url || form.youtube_channel_id ? '(optional when YouTube URL or auto-refresh is set)' : '(first = primary, rest = fallbacks)'}</span>
                 </label>
                 <div className="space-y-2">
                   {form.stream_urls.map((url, i) => (

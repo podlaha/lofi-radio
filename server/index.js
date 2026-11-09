@@ -263,7 +263,11 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
   if (youtube_title_match.length > 128) return res.status(400).json({ error: 'Live title match too long (max 128)' })
 
   const stream_urls = Array.isArray(raw_urls) ? raw_urls.map(u => trim(u)).filter(Boolean) : []
-  if (!youtube_url && !stream_urls.length) return res.status(400).json({ error: 'Either a YouTube URL or at least one stream URL is required' })
+  // Not required when auto-refresh is configured - it'll populate youtube_url
+  // on its own within a few minutes, with no manual seed value needed.
+  if (!youtube_url && !stream_urls.length && !youtube_channel_id) {
+    return res.status(400).json({ error: 'Either a YouTube URL, a stream URL, or an auto-refresh channel is required' })
+  }
   const invalid = stream_urls.find(u => !isValidUrl(u))
   if (invalid) return res.status(400).json({ error: `Invalid stream URL: ${invalid}` })
 
