@@ -117,7 +117,7 @@ async function resolveByTitleMatch(channelIdOrHandle, titleMatch) {
   return null
 }
 
-async function refreshStation(station) {
+export async function refreshStation(station) {
   const channelId = station.youtube_channel_id?.trim()
   if (!channelId) return
   const titleMatch = station.youtube_title_match?.trim()

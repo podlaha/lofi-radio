@@ -7,10 +7,10 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import {
   findByUsername, findById, getAllUsers, createUser, updateUser, deleteUser,
-  getAllStations, getActiveStations, createStation, updateStation, deleteStation,
+  getAllStations, getActiveStations, getStationById, createStation, updateStation, deleteStation,
   getContacts, updateContact,
 } from './db.js'
-import { startLiveRefresh } from './youtubeLive.js'
+import { startLiveRefresh, refreshStation } from './youtubeLive.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -273,11 +273,14 @@ app.post('/api/admin/stations', requireAdmin, async (req, res) => {
 
   try {
     const station = createStation(name, description, stream_urls, genre, sort_order, youtube_url, youtube_channel_id, youtube_title_match)
-    res.status(201).json(station)
+    // Resolve the live video immediately instead of leaving the station
+    // unplayable until the background poller's next scheduled cycle.
+    if (station.youtube_channel_id) await refreshStation(station)
+    res.status(201).json(getStationById(station.id))
   } catch (e) { res.status(400).json({ error: e.message }) }
 })
 
-app.put('/api/admin/stations', requireAdmin, (req, res) => {
+app.put('/api/admin/stations', requireAdmin, async (req, res) => {
   const { id, ...raw } = req.body
   if (!id) return res.status(400).json({ error: 'Missing id' })
 
@@ -330,6 +333,10 @@ app.put('/api/admin/stations', requireAdmin, (req, res) => {
 
   try {
     updateStation(Number(id), data)
+    // Resolve the live video immediately instead of leaving the station
+    // unplayable (or stale) until the background poller's next scheduled cycle.
+    const station = getStationById(Number(id))
+    if (station?.youtube_channel_id) await refreshStation(station)
     res.json({ success: true })
   } catch (e) { res.status(400).json({ error: e.message }) }
 })

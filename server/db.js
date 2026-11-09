@@ -218,6 +218,13 @@ export function getAllStations() {
   return values.map(row => parseStation(Object.fromEntries(columns.map((col, i) => [col, row[i]]))))
 }
 
+export function getStationById(id) {
+  const stmt = db.prepare('SELECT * FROM stations WHERE id = ?')
+  stmt.bind([id])
+  if (stmt.step()) { const row = parseStation(stmt.getAsObject()); stmt.free(); return row }
+  stmt.free(); return null
+}
+
 export function getActiveStations() {
   const result = db.exec('SELECT * FROM stations WHERE active = 1 ORDER BY sort_order, id')
   if (!result.length) return []
